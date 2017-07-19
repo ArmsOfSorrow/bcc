@@ -82,28 +82,14 @@ static inline int parse_ipv6(void *data, u64 nh_off, void *data_end) {
 
 static inline void switch_src_dst_mac(struct ethhdr *hdr)
 {
-    uint8_t tmp[6];
-    tmp[0] = hdr->h_dest[0];
-    tmp[1] = hdr->h_dest[1];
-    tmp[2] = hdr->h_dest[2];
-    tmp[3] = hdr->h_dest[3];
-    tmp[4] = hdr->h_dest[4];
-    tmp[5] = hdr->h_dest[5];
+    uint8_t t;
 
-    //write src into dst
-    hdr->h_dest[0] = hdr->h_source[0];
-    hdr->h_dest[1] = hdr->h_source[1];
-    hdr->h_dest[2] = hdr->h_source[2];
-    hdr->h_dest[3] = hdr->h_source[3];
-    hdr->h_dest[4] = hdr->h_source[4];
-    hdr->h_dest[5] = hdr->h_source[5];
-
-    hdr->h_source[0] = hdr->h_dest[0];
-    hdr->h_source[1] = hdr->h_dest[1];
-    hdr->h_source[2] = hdr->h_dest[2];
-    hdr->h_source[3] = hdr->h_dest[3];
-    hdr->h_source[4] = hdr->h_dest[4];
-    hdr->h_source[5] = hdr->h_dest[5];
+    for (int i = 0; i < ETH_ALEN; ++i)
+    {
+        t = hdr->h_dest[i];
+        hdr->h_dest[i] = hdr->h_source[i];
+        hdr->h_source[i] = t;
+    }
 }
 
 int xdp_prog1(struct CTXTYPE *ctx) {
