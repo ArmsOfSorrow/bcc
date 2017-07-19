@@ -80,11 +80,30 @@ static inline int parse_ipv6(void *data, u64 nh_off, void *data_end) {
     return ip6h->nexthdr;
 }
 
-static inlide void switch_src_dst_mac(struct ethhdr *hdr)
+static inline void switch_src_dst_mac(struct ethhdr *hdr)
 {
+    uint8_t tmp[6];
+    tmp[0] = hdr->h_dest[0];
+    tmp[1] = hdr->h_dest[1];
+    tmp[2] = hdr->h_dest[2];
+    tmp[3] = hdr->h_dest[3];
+    tmp[4] = hdr->h_dest[4];
+    tmp[5] = hdr->h_dest[5];
 
+    //write src into dst
+    hdr->h_dest[0] = hdr->h_source[0];
+    hdr->h_dest[1] = hdr->h_source[1];
+    hdr->h_dest[2] = hdr->h_source[2];
+    hdr->h_dest[3] = hdr->h_source[3];
+    hdr->h_dest[4] = hdr->h_source[4];
+    hdr->h_dest[5] = hdr->h_source[5];
 
-
+    hdr->h_source[0] = hdr->h_dest[0];
+    hdr->h_source[1] = hdr->h_dest[1];
+    hdr->h_source[2] = hdr->h_dest[2];
+    hdr->h_source[3] = hdr->h_dest[3];
+    hdr->h_source[4] = hdr->h_dest[4];
+    hdr->h_source[5] = hdr->h_dest[5];
 }
 
 int xdp_prog1(struct CTXTYPE *ctx) {
@@ -101,7 +120,7 @@ int xdp_prog1(struct CTXTYPE *ctx) {
 
     //next header offset?
     uint64_t nh_off = 0;
-    uint32_t index;
+    uint32_t index = 0;
 
     //I guess so, since we're getting the size of the ethernet header here
     //so the next one should start at this offset
@@ -115,12 +134,14 @@ int xdp_prog1(struct CTXTYPE *ctx) {
     //actually, I think we don't even need to parse IP headers here.
     //just rewrite the mac and it should be good, moongen sends garbage IPs too
     
-    if (h_proto == htons(ETH_P_IP))
+    /*if (h_proto == htons(ETH_P_IP))
         index = parse_ipv4(data, nh_off, data_end);
     else if (h_proto == htons(ETH_P_IPV6))
        index = parse_ipv6(data, nh_off, data_end);
     else
-        index = 0;
+        index = 0;*/
+
+    switch_src_dst_mac(eth);
 
     value = dropcnt.lookup(&index);
     if (value)
